@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title> </title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 20px;
+      color: white;
+      font-family: system-ui, sans-serif;
+    }
+    button {
+      background: none;
+      border: 2px solid white;
+      color: white;
+      padding: 15px 30px;
+      font-size: 1.2rem;
+      border-radius: 50px;
+      cursor: pointer;
+    }
+    #revealBtn, #revealText {
+      display: none;
+      text-align: center;
+    }
+    #revealText {
+      opacity: 0;
+      transition: opacity 1s;
+      font-size: 1rem;
+      max-width: 80%;
+    }
+    #revealText.show {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+
+<button id="playBtn" onclick="play()">▶</button>
+<button id="revealBtn" onclick="reveal()">Auflösen</button>
+
+<div id="revealText"></div>
+
+<audio id="player"></audio>
+
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const song = params.get('s') || 'a';
+  const revealId = params.get('r') || '1';
+
+  const reveals = {
+    1: "<strong>Song A</strong><br>Unsere erste gemeinsame Reise",
+    2: "<strong>Song B</strong><br>Sommer 2019 – immer dieser Abend",
+    3: "<strong>Song C</strong><br>Das Lied, das alles verändert hat"
+  };
+
+  function play() {
+    const audio = document.getElementById('player');
+    audio.src = song + '.mp3';
+    audio.play();
+
+    document.getElementById('playBtn').style.display = 'none';
+    document.getElementById('revealBtn').style.display = 'block';
+  }
+
+  function reveal() {
+    // Song stoppen und zurücksetzen
+    const audio = document.getElementById('player');
+    audio.pause();
+    audio.currentTime = 0;
+
+    document.getElementById('revealBtn').style.display = 'none';
+    const text = document.getElementById('revealText');
+    text.innerHTML = reveals[revealId] || "";
+    text.style.display = 'block';
+    requestAnimationFrame(() => text.classList.add('show'));
+  }
+</script>
+
+</body>
+</html>
