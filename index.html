@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <title> </title>
+  <title></title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     body {
@@ -16,7 +16,10 @@
       gap: 20px;
       color: white;
       font-family: system-ui, sans-serif;
+      position: relative;
+      overflow: hidden;
     }
+
     button {
       background: none;
       border: 2px solid white;
@@ -26,61 +29,103 @@
       border-radius: 50px;
       cursor: pointer;
     }
-    #revealBtn, #revealText {
-      display: none;
-      text-align: center;
-    }
+
     #revealText {
       opacity: 0;
       transition: opacity 1s;
       font-size: 1rem;
       max-width: 80%;
+      text-align: center;
+      display: none;
     }
+
     #revealText.show {
       opacity: 1;
+    }
+
+    /* Wrapper für den Spotify-Player – startet klein gecroppt */
+    #spotifyPlayerWrapper {
+      width: 50px;      /* kleine Sichtfläche */
+      height: 50px;
+      overflow: hidden; /* Rest abschneiden */
+      border-radius: 8px;
+      transition: all 0.6s ease; /* sanfte Vergrößerung beim Auflösen */
+    }
+
+    /* Iframe: zuerst verschoben, sodass nur unten rechts sichtbar ist */
+    #spotifyPlayer {
+      border: none;
+      width: 320px;    /* typische Breite des Embeds */
+      height: 80px;    /* typische Höhe des Embeds */
+      transform: translate(-280px, -40px);
+      transition: transform 0.6s ease;
+    }
+
+    /* Klasse für „normalen“ Zustand nach Auflösen */
+    #spotifyPlayerWrapper.expanded {
+      width: 320px;
+      height: 80px;
+      border-radius: 12px;
+    }
+
+    #spotifyPlayerWrapper.expanded #spotifyPlayer {
+      transform: translate(0, 0);
     }
   </style>
 </head>
 <body>
 
-<button id="playBtn" onclick="play()">▶</button>
+<!-- Nur der (anfangs kleine) Spotify-Player -->
+<div id="spotifyPlayerWrapper">
+  <iframe id="spotifyPlayer"
+    src=""
+    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+    loading="lazy">
+  </iframe>
+</div>
+
+<!-- Auflösen-Button -->
 <button id="revealBtn" onclick="reveal()">Auflösen</button>
 
+<!-- Text, der beim Auflösen erscheint -->
 <div id="revealText"></div>
 
-<audio id="player"></audio>
-
 <script>
-  const params = new URLSearchParams(window.location.search);
-  const song = params.get('s') || 'a';
+  const params   = new URLSearchParams(window.location.search);
+  const trackId  = params.get('s') || '20l2YWgtEXAAAEzoWs3gkE'; // Fallback-Track-ID
   const revealId = params.get('r') || '1';
 
   const reveals = {
-    1: "<strong>Song A</strong><br>Unsere erste gemeinsame Reise",
-    2: "<strong>Song B</strong><br>Sommer 2019 – immer dieser Abend",
-    3: "<strong>Song C</strong><br>Das Lied, das alles verändert hat"
+    1: "<strong>Song A</strong><br>tbd",
+    2: "<strong>Song B</strong><br>tbd",
+    3: "<strong>Song C</strong><br>tbd"
   };
 
-  function play() {
-    const audio = document.getElementById('player');
-    audio.src = song + '.mp3';
-    audio.play();
-
-    document.getElementById('playBtn').style.display = 'none';
-    document.getElementById('revealBtn').style.display = 'block';
-  }
+  // Beim Laden direkt den Spotify-Track setzen
+  (function initPlayer() {
+    const iframe = document.getElementById('spotifyPlayer');
+    const src = 'https://open.spotify.com/embed/track/' +
+                encodeURIComponent(trackId) +
+                '?utm_source=generator';
+                // autoplay=1 könntest du versuchen, ist aber oft vom Browser blockiert
+                // + '&autoplay=1'
+    iframe.src = src;
+  })();
 
   function reveal() {
-    // Song stoppen und zurücksetzen
-    const audio = document.getElementById('player');
-    audio.pause();
-    audio.currentTime = 0;
+    const wrapper = document.getElementById('spotifyPlayerWrapper');
 
-    document.getElementById('revealBtn').style.display = 'none';
+    // Iframe auf normale Größe bringen
+    wrapper.classList.add('expanded');
+
+    // Text einblenden
     const text = document.getElementById('revealText');
     text.innerHTML = reveals[revealId] || "";
     text.style.display = 'block';
     requestAnimationFrame(() => text.classList.add('show'));
+
+    // Button (optional) ausblenden, wenn er danach weg sein soll
+    document.getElementById('revealBtn').style.display = 'none';
   }
 </script>
 
