@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Deutschrap QR-Codes</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 10mm;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      font-size: 8pt;
+      margin: 0;
+    }
+    .page {
+      display: grid;
+      /* 4 Spalten x beliebig viele Reihen -> viele Codes pro Seite */
+      grid-template-columns: repeat(4, 1fr);
+      grid-auto-rows: auto;
+      gap: 4mm;
+      page-break-after: always;
+    }
+    .qr {
+      text-align: center;
+      break-inside: avoid;
+    }
+    .qr img {
+      width: 100%;
+      max-width: 45mm; /* damit 4 pro Reihe gut auf A4 passen */
+      height: auto;
+      display: block;
+      margin: 0 auto 2mm auto;
+    }
+    .label {
+      font-size: 7pt;
+      line-height: 1.2;
+    }
+    .label strong {
+      font-size: 7.5pt;
+    }
+  </style>
+</head>
+<body>
+
+<div class="page" id="container"></div>
+
+<script>
+  // Daten: id, spotify-id, text-Beschreibung
+  const items = [
+    {id:1,  s:"1Fjz0ME9pzk553wH86m3ZZ", t:"<strong>Schwarz zu blau</strong><br>Peter Fox<br>2008"},
+    {id:2,  s:"1B2s3CpX2PV0YN7DkLSQ4b", t:"<strong>69</strong><br>Haftbefehl, Bazzazian<br>2015"},
+    {id:3,  s:"5UnUWUqvsEAm1jVuKIWT1O", t:"<strong>petit frère</strong><br>RAPK<br>2022"},
+    {id:4,  s:"20l2YWgtEXAAAEzoWs3gkE", t:"<strong>Powerade</strong><br>BHZ, SIRA, Ion Miles<br>2022"},
+    {id:5,  s:"3DDNThmGQvOQJBUfKGgY8k", t:"<strong>Meine Stadt schläft nie</strong><br>Disarstar, LUVRE47, Jugglerz<br>2024"},
+    {id:6,  s:"6dBHQPfvREo3yMPbAYZAPv", t:"<strong>Besuchstag</strong><br>Celo & Abdi, XATAR, Veysel<br>2012"},
+    {id:7,  s:"4ujG96VyO8MHsZ8aZIY0u8", t:"<strong>PAAR ECKEN HISH</strong><br>OG LU<br>2023"},
+    {id:8,  s:"2PMFaTd4KHKU2LgD4e7W1m", t:"<strong>Do Ya?</strong><br>Ebow<br>2024"},
+    {id:9,  s:"6zP4Utvok4QRXlNYBZkpGa", t:"<strong>KETA UND KRAWALL</strong><br>Ikkimel, Barré<br>2023"},
+    {id:10, s:"4h6UIDvGWTYZvu4BLf2GpO", t:"<strong>Von Party zu Party</strong><br>SXTN<br>2017"},
+    {id:11, s:"4eqjuxCylVKJykllp83972", t:"<strong>Dieses eine Lied</strong><br>Jassin<br>2025"},
+    {id:12, s:"77oSUNYDsxEzZkZxEY8cNj", t:"<strong>Lebermord am Centercourt</strong><br>Pöbel MC<br>2024"},
+    {id:13, s:"5gUXZV2Ir17qOWdtUJSh7l", t:"<strong>An Tagen wie diesen</strong><br>Fettes Brot, Pascal Finkenauer<br>2023"},
+    {id:14, s:"5ZaUig2VTK2zXInuyY0Bl3", t:"<strong>Bye Bye aka Delicious</strong><br>Trettmann, KITSCHKRIEG<br>2019"},
+    {id:15, s:"3qM75mSV84LHHJqlITqZsk", t:"<strong>Ein Affe und ein Pferd</strong><br>K.I.Z<br>2013"},
+    {id:16, s:"56dPMvvJ5QLkNCxwGqUEKl", t:"<strong>Rossmann</strong><br>Mehnersmoos, K.I.Z<br>2020"},
+    {id:17, s:"086edN2nz8TjB3zddIdlPn", t:"<strong>Mama hat gesagt</strong><br>SDP, Sido, Esther Graf<br>2024"},
+    {id:18, s:"4YZxwEHbmwwgdvhAUDwFXz", t:"<strong>Zeiten ändern dich</strong><br>Bushido<br>2010"},
+    {id:19, s:"2xWEfTSpapoxnmkeSb0hHf", t:"<strong>So perfekt</strong><br>Casper, Marteria<br>2011"},
+    {id:20, s:"55Bld5Surw2eIw74xSvn2S", t:"<strong>OMG!</strong><br>Marteria<br>2014"},
+    {id:21, s:"3kgt8Ys78I6GBZlQrWqZiA", t:"<strong>Nachts wach</strong><br>Miksu / Macloud, makko<br>2022"},
+    {id:22, s:"3yiQdN2oQg9oIG4eigMNQm", t:"<strong>NO PASARAN</strong><br>Mal Élevé, Swiss & Die Andern, ZSK, EsRAP, JuJu Rogers<br>2020"},
+    {id:23, s:"5J3GIBy6a3TLiZQQAD014r", t:"<strong>Sand in die Augen</strong><br>Danger Dan<br>2018"},
+    {id:24, s:"1NifMX1JqCz9caJowG8dxq", t:"<strong>ZEIT, DASS SICH WAS DREHT</strong><br>$OHO BANI, Herbert Grönemeyer, Ericson<br>2024"},
+    {id:25, s:"7pbU4vJyxiVvDSPmQ2FDf8", t:"<strong>Bier</strong><br>102 Boyz, BHZ<br>2018"},
+    {id:26, s:"3cLXgIlvugVKpWBmO5v9oy", t:"<strong>Nullkommaneun</strong><br>SSIO<br>2016"},
+    {id:27, s:"61RNdA8vHNfYbKlxyys3yZ", t:"<strong>Halleluja</strong><br>Audio88, Yassin<br>2016"},
+    {id:28, s:"4xuVfUXkHe1YZZZWNICGcV", t:"<strong>Erfolg ist kein Glück</strong><br>Kontra K<br>2015"},
+    {id:29, s:"0zv3f19rNhmZhNmNA2xJsF", t:"<strong>Türlich, Türlich (Sicher, Dicker)</strong><br>Das Bo<br>2000"},
+    {id:30, s:"0pgx8fWphTTM9Kv5KjWpXy", t:"<strong>Reimemonster (feat. Ferris MC)</strong><br>Afrob, Ferris MC<br>1999"},
+    {id:31, s:"4AGeTtczXmYmExCKxxARo3", t:"<strong>Regenmacher</strong><br>Megaloh<br>2016"},
+    {id:32, s:"6WusSsncC0Oo9sFHKwQii6", t:"<strong>Dior 2001</strong><br>RIN<br>2018"},
+    {id:33, s:"52KmC88JozxOuGraFXE43C", t:"<strong>2000er</strong><br>01099, Miksu / Macloud<br>2022"},
+    {id:34, s:"5bNDEwqT51nXFojsaK3Ilh", t:"<strong>Schlechtes Vorbild</strong><br>Sido<br>2006"},
+    {id:35, s:"6hw1Sy9wZ8UCxYGdpKrU6M", t:"<strong>Roller</strong><br>Apache 207<br>2019"},
+    {id:36, s:"4vxjNphyAqPGR8KpuXPGoi", t:"<strong>Füchse</strong><br>Beginner, Samy Deluxe<br>1998"},
+    {id:37, s:"4PkdsMPMUCo9ADHrQYFtHq", t:"<strong>Horst & Monika - Single Version</strong><br>Die Orsons, CRO<br>2012"},
+    {id:38, s:"66MWev4H48W1ebKDnAwqYL", t:"<strong>Lieb's oder lass es</strong><br>Genetikk, Sido<br>2013"},
+    {id:39, s:"4acHCU98iQW8CcsOpgZ3Nh", t:"<strong>Vanilla Sky</strong><br>Hanybal, Nimo<br>2016"},
+    {id:40, s:"5gr8txrWi5JFLDoxzVZxLE", t:"<strong>Venedig</strong><br>Shindy<br>2014"},
+    {id:41, s:"3FcqFCeCD6QRtRo6WGLCnC", t:"<strong>Willst du</strong><br>Alligatoah<br>2013"},
+    {id:42, s:"5MXzMhcB2hgUC87fkLDaRV", t:"<strong>Sonnenuntergang</strong><br>Lugatti & 9ine, Longus Mongus<br>2019"},
+    {id:43, s:"4BwQLePZSn9X2HoTwNpoLg", t:"<strong>Mit freundlichen Grüßen</strong><br>Die Fantastischen Vier<br>1999"},
+    {id:44, s:"1VccO3KR3IuFBSc3Fee92X", t:"<strong>Wie viel ist dein Outfit wert</strong><br>KUMMER<br>2019"},
+    {id:45, s:"5JLbgRkto4OrrkWgAHcJZT", t:"<strong>Bundeswehr</strong><br>Souly<br>2024"},
+    {id:46, s:"4FyVe8mdjaRLvtqnXae6BM", t:"<strong>Rhythmus meines Lebens</strong><br>Kool Savas<br>2010"},
+    {id:47, s:"3jd4ya9vCwExxTVOjPcqsf", t:"<strong>Die Eine 2005</strong><br>Die Firma<br>2005"},
+    {id:48, s:"12SH8NE1e17yItgsb2gitp", t:"<strong>So wie du bist</strong><br>MoTrip, Lary<br>2015"},
+    {id:49, s:"47VRtROAdociHgtuVZNoBL", t:"<strong>Weck mich auf</strong><br>Samy Deluxe<br>2001"},
+    {id:50, s:"4InISu1MzAxt2cJcUbm6us", t:"<strong>Wir waren mal Stars</strong><br>Torch, Toni-L<br>2000"},
+    {id:51, s:"6e5kuZssmkwWL3Yt4jwTRy", t:"<strong>Cruisen</strong><br>Massive Töne<br>2002"},
+    {id:52, s:"31sD77U64ym70wYEMpnSrQ", t:"<strong>Remmidemmi (Yippie Yippie Yeah)</strong><br>Deichkind<br>2006"},
+    {id:53, s:"6wHRm1KR8pzVDPdmR6Qovj", t:"<strong>Palmen aus Plastik</strong><br>Bonez MC, RAF Camora<br>2016"},
+    {id:54, s:"50mQStZYV5QFgyGK9GOVZg", t:"<strong>Neymar</strong><br>Capital Bra, Ufo361<br>2018"},
+    {id:55, s:"1vWrr6C8C6eWkcKOeUVvas", t:"<strong>Geist</strong><br>OG Keemo<br>2019"},
+    {id:56, s:"2k3ZbF0ETEuoNrkStB7oGa", t:"<strong>Drip Drop</strong><br>Money Boy<br>2020"},
+    {id:57, s:"607TgBgbTvP8CTgIHN0R6q", t:"<strong>Nice Girl 2.0</strong><br>Ufo361<br>2017"},
+    {id:58, s:"6bN6XXylz4unPfOCBIg0z5", t:"<strong>Kokaina</strong><br>Miami Yacine<br>2017"},
+    {id:59, s:"2hIY4sjfMeKwXXh2LvhrMo", t:"<strong>Was du Liebe nennst</strong><br>Bausa<br>2018"},
+    {id:60, s:"6JOAAQNp721ZTe48yoX42A", t:"<strong>Babsi Bars</strong><br>Shirin David<br>2021"},
+    {id:61, s:"592vJ3Bss91JMtKasDA4aX", t:"<strong>Quotentürke</strong><br>Eko Fresh<br>2013"},
+    {id:62, s:"32IKJthM7ARKvGBTZCE1Et", t:"<strong>Du bist Boss</strong><br>Kollegah<br>2014"},
+    {id:63, s:"5rywC2PH49hTpJLXxwGlpE", t:"<strong>CASINO</strong><br>Katja Krasavice<br>2020"},
+    {id:64, s:"1BHgWnOYgtAHhMZU73co1D", t:"<strong>Ohne Dich</strong><br>KASIMIR1441, badmómzjay, WILDBWOYS<br>2021"},
+    {id:65, s:"3FwxpJdlexIR6MeTT56HAm", t:"<strong>Easy</strong><br>CRO<br>2012"},
+    {id:66, s:"5DTjY81sxyU3o2zVb5CFpR", t:"<strong>Roadrunner</strong><br>Kwam.E, NARU<br>2019"},
+    {id:67, s:"7lYorqB6RXl8xNaLCTO4TL", t:"<strong>Waffenfreiezone</strong><br>Nate57<br>2010"},
+    {id:68, s:"2SrUsLBhQdVkaWICywYZRm", t:"<strong>MA und O</strong><br>OMA, eqt<br>2025"},
+    {id:69, s:"1pQUYh5NsDfCgXhXpsvpyi", t:"<strong>Besser als 50 Cent</strong><br>Veysel<br>2017"},
+    {id:70, s:"4CGkQ2Vl5pW7SGWaan6R2p", t:"<strong>Jäger</strong><br>Luciano<br>2017"},
+    {id:71, s:"5VJPGIQIP5ZmhsqC9Q3koN", t:"<strong>Plattenbauromantik</strong><br>Plusmacher, FiNCH, The BREED<br>2018"},
+    {id:72, s:"0LPRq5I35z8FoqYo84xn48", t:"<strong>Vor der Tür</strong><br>Gzuz<br>2020"},
+    {id:73, s:"5IsQbIEzCY1PGgc3aXpoih", t:"<strong>Schwör Ma</strong><br>Greeny, OG Keemo<br>2020"},
+    {id:74, s:"0bpDmYXHDZ4aDVQTNnltQU", t:"<strong>4L</strong><br>Ansu, Cato<br>2025"},
+    {id:75, s:"4gowaqrA2Jf49NqZQu9GXr", t:"<strong>Mehr davon</strong><br>LOKO BEN<br>2020"},
+    {id:76, s:"79AUyMecqmkjzeagNvC68L", t:"<strong>Dumm Dümmer</strong><br>Comfort Boys, Gideon Trumpet, Connect<br>2021"},
+    {id:77, s:"0I4vdvCJcIoo0h3rEU39jA", t:"<strong>Shot Clock</strong><br>Elias<br>2019"},
+    {id:78, s:"1VVXleOdSTlRz9jrvPMLYh", t:"<strong>Junimond</strong><br>Jamule<br>2025"},
+    {id:79, s:"0fq5iBq7EdrpqvG5BumAOM", t:"<strong>Backgammon</strong><br>XAVER, KazOnDaBeat<br>2020"},
+    {id:80, s:"1ine19pMzaN7szNg2323JV", t:"<strong>Parkplatz</strong><br>Olexesh<br>2025"},
+    {id:81, s:"6afELfgrsmlVydHUbFyfTQ", t:"<strong>Hollyhood</strong><br>Jezzy, Ivo Divo<br>2025"},
+    {id:82, s:"11Bqg1ApNHZopAjfBTYUGT", t:"<strong>Robert De Niro</strong><br>Keanu, G.FiT, ATP Beats<br>2024"},
+    {id:83, s:"1sMcSrcf2YZEXfzX65GudP", t:"<strong>Bin Laden</strong><br>Fergy53<br>2019"},
+    {id:84, s:"2gldQnM34PB26OtHcfLZ7J", t:"<strong>Çay</strong><br>Dante YN<br>2020"},
+    {id:85, s:"1F3iOF9cENd8yy2AwEsg8D", t:"<strong>Karte knackt</strong><br>Koushino, Camaeleon<br>2021"},
+    {id:86, s:"17xC4jTj1kzw4PhaQyOhUd", t:"<strong>TRAPPER'S LULLABY</strong><br>reezy<br>2025"},
+    {id:87, s:"0Bf7Lc7d6gE3xUDCePUvV7", t:"<strong>erstersommerohnedich</strong><br>Pashanim<br>2025"},
+    {id:88, s:"7EcS0PpanwW4wOmYhT4EJQ", t:"<strong>Flouz kommt Flouz geht</strong><br>Nimo<br>2016"},
+    {id:89, s:"71j6udGdh89xHjY0okNLXv", t:"<strong>WEST</strong><br>Kolja Goldstein<br>2021"},
+    {id:90, s:"0K7h3qIpXruphMbAq3UtEB", t:"<strong>Überlebt</strong><br>Vega<br>2025"},
+    {id:91, s:"1YJ8sZEvRO3NZGikK2BXOg", t:"<strong>#FREEBARANKOK</strong><br>Baran Kok<br>2025"},
+    {id:92, s:"4aAZTaXHlm625nZhF6Zr12", t:"<strong>bad bunnies</strong><br>Zsá Zsá, Replay Okay<br>2025"},
+    {id:93, s:"1IMa0Il4w988MwZCUcISix", t:"<strong>bissu dumm ¿ MEGALODON REMIX</strong><br>Bonez MC u.v.m.<br>2025"},
+    {id:94, s:"4hFuNRpYgcNrS7O0S9MVSN", t:"<strong>Maybachufer</strong><br>Wa22ermann<br>2023"},
+    {id:95, s:"7gE1ke5xGPC3bvGeGTQ5Pk", t:"<strong>SOS FOTZENALARM</strong><br>Kleptos<br>2023"},
+    {id:96, s:"0o4Cfom6QVL2gPMwjOs9gb", t:"<strong>Trans Agenda Dynastie</strong><br>Kerosin95<br>2022"},
+    {id:97, s:"1MeuH9ZnajRwp5XzDk47eo", t:"<strong>Karstadtdetektiv</strong><br>Team Scheisse<br>2021"},
+    {id:98, s:"42cwHEfOw7WU7HhocIEScv", t:"<strong>Was Deutschrap</strong><br>DONNA SAVAGE<br>2024"},
+    {id:99, s:"7Grb5T1TrhuS1R40afQqG7", t:"<strong>Asozial statt National</strong><br>Teuterekordz<br>2021"},
+    {id:100,s:"6HJjnoHqY45AtiiXLNAGv7", t:"<strong>Köfte</strong><br>Apsilon<br>2022"},
+    {id:101,s:"3zeMmx8H9FdIH7N1pseXw1", t:"<strong>Metro</strong><br>Dennis Dies Das<br>2019"},
+    {id:102,s:"64OZv7nYfdkUYF1FVzZWsY", t:"<strong>Pizza</strong><br>Antilopen Gang<br>2017"},
+    {id:103,s:"2tSEky7cVS0wNgDS2HxvYP", t:"<strong>HIER & DA</strong><br>LUVRE47<br>2024"},
+    {id:104,s:"5fzDpw2ecK1KghidsBVM4q", t:"<strong>30er Zone</strong><br>187 Strassenbande, LX, Sa4, Maxwell<br>2017"},
+    {id:105,s:"7Es5XYCmKaZSEqbhUwQM4O", t:"<strong>Augen schwer</strong><br>frytz, Carlo5<br>2024"},
+    {id:106,s:"0dzALDsTpfpWnEF6uzBIVf", t:"<strong>Danke Nein</strong><br>Lostboi Lino<br>2021"},
+    {id:107,s:"2kOxp9BK7kiD2e4odseUN2", t:"<strong>SANTA FREESTYLE</strong><br>THIZZY52<br>2025"},
+    {id:108,s:"5J5pSegYgOTi5uHx1IjzOO", t:"<strong>Blau Weißer Carlo</strong><br>Toujour<br>2025"},
+    {id:109,s:"36dqKlZ1gLVD1FreVKH3MQ", t:"<strong>Findet Nemo</strong><br>Djunis<br>2025"},
+    {id:110,s:"0gThlZWwZWkDqRKGOz2CN1", t:"<strong>Angels Sippen</strong><br>Symba<br>2020"},
+    {id:111,s:"1JEfGq3ZWwHLHpc4wBY5u6", t:"<strong>Pâtissier</strong><br>Sosa La M<br>2024"},
+    {id:112,s:"5BrxP8vvjxRQdoJxkMwOYf", t:"<strong>bandz</strong><br>zara<br>2025"},
+    {id:113,s:"0m2ybU8xciTehKhZgzwx7Q", t:"<strong>step</strong><br>pepino<br>2025"},
+    {id:114,s:"34y5yuvWwxO93Ws1Ng0PVw", t:"<strong>Kleines Mädchen große Träume</strong><br>AYCA, Ceren<br>2025"},
+    {id:115,s:"0cJfvqVGxKTEnElBAwAbiz", t:"<strong>rags2riches</strong><br>Joje<br>2025"},
+    {id:116,s:"18jvXAgxmuTqdDOzetuT86", t:"<strong>Original Berliner</strong><br>AYCA<br>2025"},
+    {id:117,s:"1P0gub1eKrNoTmsFGzQ4TU", t:"<strong>Bee Gees - Single Edit</strong><br>OG Keemo, Levin Liam<br>2023"},
+    {id:118,s:"4iIHvqwjvL4MW2KDmatV0H", t:"<strong>ZAHLTAG</strong><br>Boondawg<br>2024"},
+    {id:119,s:"4jovlourW2piHTMbsfjpmS", t:"<strong>YOU&ME</strong><br>Josi<br>2025"},
+    {id:120,s:"5wxu5fRUH8lL4jUhMJiLUe", t:"<strong>Schmutzfilm</strong><br>Ritter Lean<br>2023"},
+    {id:121,s:"6bTwEI3fPO6lEI85ivLMt1", t:"<strong>übersee freistil</strong><br>Ski Aggu<br>2025"},
+    {id:122,s:"6hl9FbCq5MhrQwDXWBXYAX", t:"<strong>30 Grad</strong><br>MC Fitti<br>2013"},
+    {id:123,s:"68aH1XuwMjqzeqRLCdoiA1", t:"<strong>Weil Ich's Kann</strong><br>Lance Butters<br>2023"},
+    {id:124,s:"2CmIimbg3H2uB5gQZ3btUo", t:"<strong>Wort für Wort</strong><br>Haze<br>2021"},
+    {id:125,s:"1XrWQbZgZxImTP8ph5M7TZ", t:"<strong>KOTZEN</strong><br>Weekend, JoJo<br>2020"},
+    {id:126,s:"7AXWkAdnEMyn6kqblJqphH", t:"<strong>Gravitacion</strong><br>257ers<br>2019"},
+    {id:127,s:"0BwO44CBPFWxAIO5ZbPf3N", t:"<strong>Roadrunner</strong><br>Bonez MC<br>2020"},
+  ];
+
+  const container = document.getElementById("container");
+
+  items.forEach(item => {
+    const url = `https://drenils.github.io/DeutschRapMusik/?s=${item.s}&r=${item.id}`;
+    const qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" + encodeURIComponent(url);
+
+    const div = document.createElement("div");
+    div.className = "qr";
+
+    const img = document.createElement("img");
+    img.src = qrUrl;
+    img.alt = url;
+
+    const label = document.createElement("div");
+    label.className = "label";
+    label.innerHTML = item.t;
+
+    div.appendChild(img);
+    div.appendChild(label);
+    container.appendChild(div);
+  });
+</script>
+
+</body>
+</html>
