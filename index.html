@@ -28,7 +28,7 @@
       font-size: 1.2rem;
       border-radius: 50px;
       cursor: pointer;
-      text-decoration: none; /* für <a> */
+      text-decoration: none;
       display: inline-block;
     }
 
@@ -45,25 +45,22 @@
       opacity: 1;
     }
 
-    /* Wrapper für den Spotify-Player – startet klein gecroppt */
     #spotifyPlayerWrapper {
-      width: 50px;      /* kleine Sichtfläche */
+      width: 50px;
       height: 50px;
-      overflow: hidden; /* Rest abschneiden */
+      overflow: hidden;
       border-radius: 8px;
-      transition: all 0.6s ease; /* sanfte Vergrößerung beim Auflösen */
+      transition: all 0.6s ease;
     }
 
-    /* Iframe: zuerst verschoben, sodass nur unten rechts sichtbar ist */
     #spotifyPlayer {
       border: none;
-      width: 320px;    /* typische Breite des Embeds */
-      height: 80px;    /* typische Höhe des Embeds */
+      width: 320px;
+      height: 80px;
       transform: translate(-280px, -40px);
       transition: transform 0.6s ease;
     }
 
-    /* Klasse für „normalen“ Zustand nach Auflösen */
     #spotifyPlayerWrapper.expanded {
       width: 320px;
       height: 80px;
@@ -74,16 +71,44 @@
       transform: translate(0, 0);
     }
 
-    /* Container für beide Buttons */
     #buttonRow {
       display: flex;
       gap: 12px;
+    }
+
+    /* NEU: Wrapper für QR-Scanner-UI */
+    #qrScannerContainer {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    #qr-video {
+      width: 280px;
+      max-width: 90vw;
+      border-radius: 8px;
+      border: 2px solid white;
+      background: #222;
+    }
+
+    #qrResult {
+      font-size: 0.9rem;
+      max-width: 80%;
+      text-align: center;
+      word-break: break-all;
+    }
+
+    #closeScannerBtn {
+      padding: 8px 16px;
+      font-size: 0.9rem;
+      border-radius: 20px;
     }
   </style>
 </head>
 <body>
 
-<!-- Nur der (anfangs kleine) Spotify-Player -->
 <div id="spotifyPlayerWrapper">
   <iframe id="spotifyPlayer"
     src=""
@@ -92,11 +117,9 @@
   </iframe>
 </div>
 
-<!-- Button-Zeile: Auflösen + Absprung zu Spotify -->
 <div id="buttonRow">
   <button id="revealBtn" onclick="reveal()">Auflösen</button>
 
-  <!-- Der Link wird per JS mit der richtigen Track-ID befüllt -->
   <a id="openSpotifyBtn"
      class="button-link"
      href="#"
@@ -104,14 +127,28 @@
      rel="noopener noreferrer">
     In Spotify öffnen
   </a>
+
+  <!-- NEU: QR-Scan-Button, anfangs versteckt -->
+  <button id="qrScanBtn" style="display:none;" onclick="openQrScanner()">
+    QR-Code scannen
+  </button>
 </div>
 
-<!-- Text, der beim Auflösen erscheint -->
 <div id="revealText"></div>
+
+<!-- NEU: QR-Scanner UI -->
+<div id="qrScannerContainer">
+  <video id="qr-video" muted playsinline></video>
+  <div id="qrResult"></div>
+  <button id="closeScannerBtn" onclick="closeQrScanner()">Scanner schließen</button>
+</div>
+
+<!-- NEU: QR-Decoder-Library jsQR -->
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 
 <script>
   const params   = new URLSearchParams(window.location.search);
-  const trackId  = params.get('s') || '20l2YWgtEXAAAEzoWs3gkE'; // Fallback-Track-ID
+  const trackId  = params.get('s') || '20l2YWgtEXAAAEzoWs3gkE';
   const revealId = params.get('r') || '1';
 
   const reveals = {
@@ -244,7 +281,6 @@
     127: "<strong>Roadrunner</strong><br>2020",
   };
 
-  // Beim Laden: Spotify-Embed und Absprung-Link setzen
   (function initPlayer() {
     const iframe = document.getElementById('spotifyPlayer');
     const src = 'https://open.spotify.com/embed/track/' +
@@ -252,25 +288,103 @@
                 '?utm_source=generator';
     iframe.src = src;
 
-    // Absprung-Link zum vollen Track in Spotify setzen
     const openBtn = document.getElementById('openSpotifyBtn');
     openBtn.href = 'https://open.spotify.com/track/' + encodeURIComponent(trackId);
   })();
 
   function reveal() {
     const wrapper = document.getElementById('spotifyPlayerWrapper');
-
-    // Iframe auf normale Größe bringen
     wrapper.classList.add('expanded');
 
-    // Text einblenden
     const text = document.getElementById('revealText');
     text.innerHTML = reveals[revealId] || "";
     text.style.display = 'block';
     requestAnimationFrame(() => text.classList.add('show'));
 
-    // Auflösen-Button ausblenden, Absprung-Button bleibt sichtbar
     document.getElementById('revealBtn').style.display = 'none';
+
+    // NEU: QR-Scan-Button nach Auflösen anzeigen
+    document.getElementById('qrScanBtn').style.display = 'inline-block';
+  }
+
+  // ------------ QR-SCANNER-LOGIK (NEU) -----------------
+
+  let qrStream = null;
+  let qrAnimationFrame = null;
+
+  async function openQrScanner() {
+    const container = document.getElementById('qrScannerContainer');
+    const video = document.getElementById('qr-video');
+    const resultDiv = document.getElementById('qrResult');
+
+    container.style.display = 'flex';
+    resultDiv.textContent = "Richte den QR-Code in der Kamera aus...";
+
+    try {
+      qrStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment" }
+      });
+      video.srcObject = qrStream;
+      await video.play();
+
+      startQrDecodeLoop(video, resultDiv);
+    } catch (err) {
+      console.error(err);
+      resultDiv.textContent = "Kamera konnte nicht geöffnet werden. Erlaubnisse prüfen.";
+    }
+  }
+
+  function startQrDecodeLoop(video, resultDiv) {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    const tick = () => {
+      if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imageData.data, canvas.width, canvas.height, {
+          inversionAttempts: "dontInvert",
+        });
+
+        if (code && code.data) {
+          resultDiv.textContent = "QR-Code erkannt: " + code.data;
+
+          // Beispiel: direkt auf eine URL aus dem QR-Code navigieren
+          // (nur wenn es eine URL ist)
+          try {
+            const url = new URL(code.data);
+            // im selben Tab öffnen
+            window.location.href = url.href;
+            stopQrScanner();
+            return;
+          } catch (e) {
+            // kein gültiger URL-String, nur anzeigen
+          }
+        }
+      }
+      qrAnimationFrame = requestAnimationFrame(tick);
+    };
+
+    qrAnimationFrame = requestAnimationFrame(tick);
+  }
+
+  function stopQrScanner() {
+    if (qrAnimationFrame) {
+      cancelAnimationFrame(qrAnimationFrame);
+      qrAnimationFrame = null;
+    }
+    if (qrStream) {
+      qrStream.getTracks().forEach(t => t.stop());
+      qrStream = null;
+    }
+  }
+
+  function closeQrScanner() {
+    stopQrScanner();
+    document.getElementById('qrScannerContainer').style.display = 'none';
   }
 </script>
 
